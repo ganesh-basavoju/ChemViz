@@ -91,7 +91,7 @@ function Dashboard({ user }) {
             )}
             <span className="user-name">{displayName}</span>
           </div>
-          <a href="/auth/replit_auth/logout" className="btn btn-secondary btn-sm">
+          <a href="/auth/logout" className="btn btn-secondary btn-sm">
             Sign Out
           </a>
         </div>

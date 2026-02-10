@@ -11,7 +11,7 @@ function LandingPage() {
           <span className="brand-icon">⚗️</span>
           <span className="brand-text">ChemViz</span>
         </div>
-        <a href="/auth/replit_auth/login" className="btn btn-primary">
+        <a href="/auth/login" className="btn btn-primary">
           Sign In
         </a>
       </nav>
@@ -36,7 +36,7 @@ function LandingPage() {
           </p>
 
           <div className="hero-actions fade-in-up stagger-5">
-            <a href="/auth/replit_auth/login" className="btn btn-primary btn-lg">
+            <a href="/auth/login" className="btn btn-primary btn-lg">
               Get Started
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M5 12h14M12 5l7 7-7 7" />
