@@ -70,15 +70,15 @@ def upload_csv():
         df['Temperature'] = pd.to_numeric(df['Temperature'], errors='coerce')
         df = df.dropna(subset=['Flowrate', 'Pressure', 'Temperature'])
 
-        type_dist = df['Type'].value_counts().to_dict()
+        type_dist = {str(k): int(v) for k, v in df['Type'].value_counts().items()}
 
         dataset = Dataset(
             user_id=current_user.id,
             filename=file.filename,
-            total_count=len(df),
-            avg_flowrate=round(df['Flowrate'].mean(), 2),
-            avg_pressure=round(df['Pressure'].mean(), 2),
-            avg_temperature=round(df['Temperature'].mean(), 2),
+            total_count=int(len(df)),
+            avg_flowrate=float(round(df['Flowrate'].mean(), 2)),
+            avg_pressure=float(round(df['Pressure'].mean(), 2)),
+            avg_temperature=float(round(df['Temperature'].mean(), 2)),
             type_distribution=json.dumps(type_dist),
         )
         db.session.add(dataset)
@@ -87,8 +87,8 @@ def upload_csv():
         for _, row in df.iterrows():
             eq = EquipmentData(
                 dataset_id=dataset.id,
-                equipment_name=row['Equipment Name'],
-                equipment_type=row['Type'],
+                equipment_name=str(row['Equipment Name']),
+                equipment_type=str(row['Type']),
                 flowrate=float(row['Flowrate']),
                 pressure=float(row['Pressure']),
                 temperature=float(row['Temperature']),
