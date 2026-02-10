@@ -13,9 +13,13 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 
 from app import app, db
 from models import Dataset, EquipmentData
-from replit_auth import require_login, make_replit_blueprint
+from replit_auth import require_login, make_replit_blueprint, register_local_auth_routes, IS_REPLIT
 
-app.register_blueprint(make_replit_blueprint(), url_prefix="/auth")
+replit_bp = make_replit_blueprint()
+if replit_bp:
+    app.register_blueprint(replit_bp, url_prefix="/auth")
+else:
+    register_local_auth_routes(app)
 
 
 @app.before_request
@@ -33,6 +37,7 @@ def auth_status():
     if current_user.is_authenticated:
         return jsonify({
             'authenticated': True,
+            'auth_mode': 'replit' if IS_REPLIT else 'local',
             'user': {
                 'id': current_user.id,
                 'email': current_user.email,
@@ -41,7 +46,7 @@ def auth_status():
                 'profile_image_url': current_user.profile_image_url,
             }
         })
-    return jsonify({'authenticated': False})
+    return jsonify({'authenticated': False, 'auth_mode': 'replit' if IS_REPLIT else 'local'})
 
 
 @app.route('/api/upload', methods=['POST'])

@@ -1,6 +1,43 @@
+import { useState } from 'react'
+import axios from 'axios'
 import '../styles/LandingPage.css'
 
-function LandingPage() {
+function LandingPage({ authMode, onLogin }) {
+  const [showAuthForm, setShowAuthForm] = useState(false)
+  const [isRegister, setIsRegister] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setSubmitting(true)
+
+    try {
+      const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login'
+      const payload = isRegister ? { email, password, name } : { email, password }
+      const res = await axios.post(endpoint, payload)
+      if (res.data.success) {
+        onLogin(res.data.user)
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'Something went wrong')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleGetStarted = () => {
+    if (authMode === 'replit') {
+      window.location.href = '/auth/login'
+    } else {
+      setShowAuthForm(true)
+    }
+  }
+
   return (
     <div className="landing">
       <div className="landing-grid-bg"></div>
@@ -8,12 +45,18 @@ function LandingPage() {
 
       <nav className="landing-nav fade-in-up stagger-1">
         <div className="nav-brand">
-          <span className="brand-icon">⚗️</span>
+          <span className="brand-icon">&#9879;&#65039;</span>
           <span className="brand-text">ChemViz</span>
         </div>
-        <a href="/auth/login" className="btn btn-primary">
-          Sign In
-        </a>
+        {authMode === 'replit' ? (
+          <a href="/auth/login" className="btn btn-primary">
+            Sign In
+          </a>
+        ) : (
+          <button onClick={() => { setShowAuthForm(true); setIsRegister(false); }} className="btn btn-primary">
+            Sign In
+          </button>
+        )}
       </nav>
 
       <main className="landing-hero">
@@ -36,12 +79,12 @@ function LandingPage() {
           </p>
 
           <div className="hero-actions fade-in-up stagger-5">
-            <a href="/auth/login" className="btn btn-primary btn-lg">
+            <button onClick={handleGetStarted} className="btn btn-primary btn-lg">
               Get Started
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
-            </a>
+            </button>
           </div>
 
           <div className="hero-stats fade-in-up stagger-6">
@@ -105,6 +148,68 @@ function LandingPage() {
           </div>
         </div>
       </main>
+
+      {showAuthForm && authMode === 'local' && (
+        <div className="auth-modal-overlay" onClick={() => setShowAuthForm(false)}>
+          <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="auth-modal-close" onClick={() => setShowAuthForm(false)}>&times;</button>
+            <h2 className="auth-modal-title">{isRegister ? 'Create Account' : 'Sign In'}</h2>
+            <p className="auth-modal-subtitle">
+              {isRegister ? 'Join ChemViz to start analyzing your equipment data' : 'Welcome back to ChemViz'}
+            </p>
+
+            {error && <div className="auth-error">{error}</div>}
+
+            <form onSubmit={handleSubmit} className="auth-form">
+              {isRegister && (
+                <div className="form-group">
+                  <label>Name</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                    className="form-input"
+                  />
+                </div>
+              )}
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label>Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Min 6 characters"
+                  required
+                  minLength={6}
+                  className="form-input"
+                />
+              </div>
+              <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
+                {submitting ? 'Please wait...' : (isRegister ? 'Create Account' : 'Sign In')}
+              </button>
+            </form>
+
+            <p className="auth-toggle">
+              {isRegister ? 'Already have an account? ' : "Don't have an account? "}
+              <button onClick={() => { setIsRegister(!isRegister); setError(''); }} className="auth-toggle-btn">
+                {isRegister ? 'Sign In' : 'Create one'}
+              </button>
+            </p>
+          </div>
+        </div>
+      )}
 
       <footer className="landing-footer fade-in stagger-6">
         <p>Chemical Equipment Parameter Visualizer</p>

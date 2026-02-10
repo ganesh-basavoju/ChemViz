@@ -4,7 +4,7 @@ import uuid
 from functools import wraps
 from urllib.parse import urlencode
 
-from flask import g, session, redirect, request, url_for, render_template
+from flask import g, session, redirect, request, url_for, render_template, jsonify
 from flask_dance.consumer import (
     OAuth2ConsumerBlueprint,
     oauth_authorized,
@@ -15,9 +15,12 @@ from flask_login import LoginManager, login_user, logout_user, current_user
 from oauthlib.oauth2.rfc6749.errors import InvalidGrantError
 from sqlalchemy.exc import NoResultFound
 from werkzeug.local import LocalProxy
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from app import app, db
 from models import OAuth, User
+
+IS_REPLIT = bool(os.environ.get('REPL_ID'))
 
 login_manager = LoginManager(app)
 
@@ -63,10 +66,9 @@ class UserSessionStorage(BaseStorage):
 
 
 def make_replit_blueprint():
-    try:
-        repl_id = os.environ['REPL_ID']
-    except KeyError:
-        raise SystemExit("the REPL_ID environment variable must be set")
+    repl_id = os.environ.get('REPL_ID')
+    if not repl_id:
+        return None
 
     issuer_url = os.environ.get('ISSUER_URL', "https://replit.com/oidc")
 
@@ -158,20 +160,24 @@ def require_login(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
-            session["next_url"] = get_next_navigation_url(request)
-            return redirect(url_for('replit_auth.login'))
-
-        expires_in = replit.token.get('expires_in', 0)
-        if expires_in < 0:
-            issuer_url = os.environ.get('ISSUER_URL', "https://replit.com/oidc")
-            refresh_token_url = issuer_url + "/token"
-            try:
-                token = replit.refresh_token(token_url=refresh_token_url,
-                                             client_id=os.environ['REPL_ID'])
-            except InvalidGrantError:
+            if IS_REPLIT:
                 session["next_url"] = get_next_navigation_url(request)
                 return redirect(url_for('replit_auth.login'))
-            replit.token_updater(token)
+            else:
+                return jsonify({'error': 'Authentication required'}), 401
+
+        if IS_REPLIT:
+            expires_in = replit.token.get('expires_in', 0)
+            if expires_in < 0:
+                issuer_url = os.environ.get('ISSUER_URL', "https://replit.com/oidc")
+                refresh_token_url = issuer_url + "/token"
+                try:
+                    token = replit.refresh_token(token_url=refresh_token_url,
+                                                 client_id=os.environ['REPL_ID'])
+                except InvalidGrantError:
+                    session["next_url"] = get_next_navigation_url(request)
+                    return redirect(url_for('replit_auth.login'))
+                replit.token_updater(token)
 
         return f(*args, **kwargs)
 
@@ -188,3 +194,60 @@ def get_next_navigation_url(request):
 
 
 replit = LocalProxy(lambda: g.flask_dance_replit)
+
+
+def register_local_auth_routes(app):
+    @app.route('/api/auth/register', methods=['POST'])
+    def register():
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        password = data.get('password', '')
+        name = data.get('name', '').strip()
+
+        if not email or not password:
+            return jsonify({'error': 'Email and password are required'}), 400
+        if len(password) < 6:
+            return jsonify({'error': 'Password must be at least 6 characters'}), 400
+
+        existing = User.query.filter_by(email=email).first()
+        if existing:
+            return jsonify({'error': 'An account with this email already exists'}), 400
+
+        user = User()
+        user.id = uuid.uuid4().hex
+        user.email = email
+        user.first_name = name or email.split('@')[0]
+        user.password_hash = generate_password_hash(password)
+        db.session.add(user)
+        db.session.commit()
+
+        login_user(user)
+        return jsonify({'success': True, 'user': {
+            'id': user.id,
+            'email': user.email,
+            'first_name': user.first_name,
+        }})
+
+    @app.route('/api/auth/login', methods=['POST'])
+    def local_login():
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        password = data.get('password', '')
+
+        user = User.query.filter_by(email=email).first()
+        if not user or not user.password_hash:
+            return jsonify({'error': 'Invalid email or password'}), 401
+        if not check_password_hash(user.password_hash, password):
+            return jsonify({'error': 'Invalid email or password'}), 401
+
+        login_user(user)
+        return jsonify({'success': True, 'user': {
+            'id': user.id,
+            'email': user.email,
+            'first_name': user.first_name,
+        }})
+
+    @app.route('/api/auth/logout', methods=['POST'])
+    def local_logout():
+        logout_user()
+        return jsonify({'success': True})

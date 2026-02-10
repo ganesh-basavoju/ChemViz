@@ -7,6 +7,7 @@ import './App.css'
 function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [authMode, setAuthMode] = useState('replit')
 
   useEffect(() => {
     checkAuth()
@@ -15,6 +16,7 @@ function App() {
   const checkAuth = async () => {
     try {
       const res = await axios.get('/api/auth/status')
+      setAuthMode(res.data.auth_mode || 'replit')
       if (res.data.authenticated) {
         setUser(res.data.user)
       }
@@ -22,6 +24,19 @@ function App() {
       console.error('Auth check failed:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleLocalLogin = (userData) => {
+    setUser(userData)
+  }
+
+  const handleLocalLogout = async () => {
+    try {
+      await axios.post('/api/auth/logout')
+      setUser(null)
+    } catch (err) {
+      console.error('Logout failed:', err)
     }
   }
 
@@ -42,10 +57,10 @@ function App() {
   }
 
   if (!user) {
-    return <LandingPage />
+    return <LandingPage authMode={authMode} onLogin={handleLocalLogin} />
   }
 
-  return <Dashboard user={user} />
+  return <Dashboard user={user} authMode={authMode} onLogout={handleLocalLogout} />
 }
 
 export default App

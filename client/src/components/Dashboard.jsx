@@ -5,7 +5,7 @@ import DatasetView from './DatasetView'
 import HistoryPanel from './HistoryPanel'
 import '../styles/Dashboard.css'
 
-function Dashboard({ user }) {
+function Dashboard({ user, authMode, onLogout }) {
   const [datasets, setDatasets] = useState([])
   const [activeDataset, setActiveDataset] = useState(null)
   const [activeView, setActiveView] = useState('upload')
@@ -91,9 +91,15 @@ function Dashboard({ user }) {
             )}
             <span className="user-name">{displayName}</span>
           </div>
-          <a href="/auth/logout" className="btn btn-secondary btn-sm">
-            Sign Out
-          </a>
+          {authMode === 'replit' ? (
+            <a href="/auth/logout" className="btn btn-secondary btn-sm">
+              Sign Out
+            </a>
+          ) : (
+            <button onClick={onLogout} className="btn btn-secondary btn-sm">
+              Sign Out
+            </button>
+          )}
         </div>
       </header>
 
