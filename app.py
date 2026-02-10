@@ -33,4 +33,15 @@ db.init_app(app)
 with app.app_context():
     import models  # noqa: F401
     db.create_all()
+
+    from sqlalchemy import text, inspect
+    inspector = inspect(db.engine)
+    if 'users' in inspector.get_table_names():
+        columns = [col['name'] for col in inspector.get_columns('users')]
+        if 'password_hash' not in columns:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE users ADD COLUMN password_hash VARCHAR'))
+                conn.commit()
+            logging.info("Added password_hash column to users table")
+
     logging.info("Database tables created")

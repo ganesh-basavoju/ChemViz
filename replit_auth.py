@@ -199,34 +199,40 @@ replit = LocalProxy(lambda: g.flask_dance_replit)
 def register_local_auth_routes(app):
     @app.route('/api/auth/register', methods=['POST'])
     def register():
-        data = request.get_json()
-        email = data.get('email', '').strip().lower()
-        password = data.get('password', '')
-        name = data.get('name', '').strip()
+        try:
+            data = request.get_json()
+            email = data.get('email', '').strip().lower()
+            password = data.get('password', '')
+            name = data.get('name', '').strip()
 
-        if not email or not password:
-            return jsonify({'error': 'Email and password are required'}), 400
-        if len(password) < 6:
-            return jsonify({'error': 'Password must be at least 6 characters'}), 400
+            if not email or not password:
+                return jsonify({'error': 'Email and password are required'}), 400
+            if len(password) < 6:
+                return jsonify({'error': 'Password must be at least 6 characters'}), 400
 
-        existing = User.query.filter_by(email=email).first()
-        if existing:
-            return jsonify({'error': 'An account with this email already exists'}), 400
+            existing = User.query.filter_by(email=email).first()
+            if existing:
+                return jsonify({'error': 'An account with this email already exists'}), 400
 
-        user = User()
-        user.id = uuid.uuid4().hex
-        user.email = email
-        user.first_name = name or email.split('@')[0]
-        user.password_hash = generate_password_hash(password)
-        db.session.add(user)
-        db.session.commit()
+            user = User()
+            user.id = uuid.uuid4().hex
+            user.email = email
+            user.first_name = name or email.split('@')[0]
+            user.password_hash = generate_password_hash(password)
+            db.session.add(user)
+            db.session.commit()
 
-        login_user(user)
-        return jsonify({'success': True, 'user': {
-            'id': user.id,
-            'email': user.email,
-            'first_name': user.first_name,
-        }})
+            login_user(user)
+            return jsonify({'success': True, 'user': {
+                'id': user.id,
+                'email': user.email,
+                'first_name': user.first_name,
+            }})
+        except Exception as e:
+            db.session.rollback()
+            import logging
+            logging.error(f"Registration error: {str(e)}")
+            return jsonify({'error': 'Registration failed. Please try again.'}), 500
 
     @app.route('/api/auth/login', methods=['POST'])
     def local_login():
