@@ -696,6 +696,8 @@ dependencies = [
     { name = "psycopg2-binary" },
     { name = "pyjwt" },
     { name = "reportlab" },
+    { name = "sqlalchemy" },
+    { name = "werkzeug" },
 ]
 
 [package.metadata]
@@ -711,6 +713,8 @@ requires-dist = [
     { name = "psycopg2-binary", specifier = ">=2.9.11" },
     { name = "pyjwt", specifier = ">=2.11.0" },
     { name = "reportlab", specifier = ">=4.4.9" },
+    { name = "sqlalchemy", specifier = ">=2.0.46" },
+    { name = "werkzeug", specifier = ">=3.1.5" },
 ]
 
 [[package]]
