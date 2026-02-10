@@ -76,6 +76,8 @@ def make_replit_blueprint():
         client_id=repl_id,
         client_secret=None,
         base_url=issuer_url,
+        login_url="/login",
+        authorized_url="/authorized",
         authorization_url_params={
             "prompt": "login consent",
         },
