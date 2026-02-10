@@ -3,6 +3,7 @@ import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
+  RadialLinearScale,
   BarElement,
   PointElement,
   LineElement,
@@ -16,7 +17,7 @@ import { Bar, Doughnut, Line, Radar } from 'react-chartjs-2'
 import '../styles/DatasetView.css'
 
 ChartJS.register(
-  CategoryScale, LinearScale, BarElement, PointElement,
+  CategoryScale, LinearScale, RadialLinearScale, BarElement, PointElement,
   LineElement, ArcElement, Title, Tooltip, Legend, Filler
 )
 

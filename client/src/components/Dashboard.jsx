@@ -79,13 +79,13 @@ function Dashboard({ user }) {
     <div className="dashboard">
       <header className="dash-header fade-in-up stagger-1">
         <div className="dash-header-left">
-          <div className="dash-brand">
+          <div className="dash-brand" onClick={() => setActiveView('upload')} style={{cursor: 'pointer'}}>
             <span className="brand-icon">⚗️</span>
             <span className="brand-text">ChemViz</span>
           </div>
         </div>
         <div className="dash-header-right">
-          <div className="user-info">
+          <div className="user-info" onClick={() => setActiveView('history')} style={{cursor: 'pointer'}}>
             {user.profile_image_url && (
               <img src={user.profile_image_url} alt="" className="user-avatar" />
             )}
